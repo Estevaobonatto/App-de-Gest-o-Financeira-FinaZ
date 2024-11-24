@@ -623,15 +623,19 @@ class _HomeContentState extends State<HomeContent> {
                     return Card(
                       margin: EdgeInsets.symmetric(vertical: 4),
                       child: ListTile(
-                        title: Text(category['name']),
+                        title: Text(
+                          category['name'],
+                          style: TextStyle(color: Colors.white),
+                        ),
                         subtitle: Text(
                           '${category['percentage'].toStringAsFixed(1)}% do total',
+                          style: TextStyle(color: Colors.white70),
                         ),
                         trailing: Text(
                           'R\$ ${category['amount'].toStringAsFixed(2)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: Colors.red[300],
                           ),
                         ),
                       ),
@@ -666,15 +670,19 @@ class _HomeContentState extends State<HomeContent> {
                     return Card(
                       margin: EdgeInsets.symmetric(vertical: 4),
                       child: ListTile(
-                        title: Text(category['name']),
+                        title: Text(
+                          category['name'],
+                          style: TextStyle(color: Colors.white),
+                        ),
                         subtitle: Text(
                           '${category['percentage'].toStringAsFixed(1)}% do total',
+                          style: TextStyle(color: Colors.white70),
                         ),
                         trailing: Text(
                           'R\$ ${category['amount'].toStringAsFixed(2)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            color: Colors.green[300],
                           ),
                         ),
                       ),

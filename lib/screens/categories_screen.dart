@@ -87,7 +87,9 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             controller: _tabController,
             tabs: [
               Tab(text: 'Despesas'),
-              Tab(text: 'Receitas'),
+              Tab(
+                text: 'Receitas',
+              ),
             ],
           ),
         ),
@@ -118,24 +120,29 @@ class _CategoriesScreenState extends State<CategoriesScreen>
           type == 'expense'
               ? 'Nenhuma categoria de despesa'
               : 'Nenhuma categoria de receita',
-          style: TextStyle(fontSize: 16),
+          style: TextStyle(color: Colors.white),
         ),
       );
     }
 
     return ListView.builder(
-      physics: AlwaysScrollableScrollPhysics(), // Permite o pull-to-refresh
+      physics: AlwaysScrollableScrollPhysics(),
       itemCount: filteredCategories.length,
       itemBuilder: (context, index) {
         final category = filteredCategories[index];
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: ListTile(
-            title: Text(category['name']),
-            subtitle:
-                Text(category['type'] == 'expense' ? 'Despesa' : 'Receita'),
+            title: Text(
+              category['name'],
+              style: TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              category['type'] == 'expense' ? 'Despesa' : 'Receita',
+              style: TextStyle(color: Colors.white70),
+            ),
             trailing: IconButton(
-              icon: Icon(Icons.delete),
+              icon: Icon(Icons.delete, color: Colors.white),
               onPressed: () => _deleteCategory(category['id']),
             ),
           ),

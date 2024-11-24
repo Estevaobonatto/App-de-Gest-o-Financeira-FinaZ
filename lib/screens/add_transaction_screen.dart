@@ -5,6 +5,10 @@ import '../services/auth_service.dart';
 import '../models/account.dart';
 
 class AddTransactionScreen extends StatefulWidget {
+  final Transaction? transaction;
+
+  AddTransactionScreen({this.transaction});
+
   @override
   _AddTransactionScreenState createState() => _AddTransactionScreenState();
 }
@@ -24,6 +28,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.transaction != null) {
+      _descriptionController.text = widget.transaction!.description;
+      _amountController.text = widget.transaction!.amount.toString();
+      _selectedDate = widget.transaction!.date;
+      _type = widget.transaction!.type;
+      _selectedCategoryId = widget.transaction!.categoryId;
+      _selectedAccountId = widget.transaction!.accountId;
+    }
     _loadData();
   }
 
@@ -230,7 +242,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         }
 
         final transaction = Transaction(
-          id: 0,
+          id: widget.transaction?.id ?? 0,
           userId: userId,
           accountId: _selectedAccountId,
           description: _descriptionController.text,
@@ -241,16 +253,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
 
         final dbService = DatabaseService();
-        await dbService.addTransaction(transaction);
+
+        if (widget.transaction != null) {
+          await dbService.updateTransaction(transaction);
+        } else {
+          await dbService.addTransaction(transaction);
+        }
 
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Transação adicionada com sucesso!')),
+          SnackBar(
+            content: Text(widget.transaction != null
+                ? 'Transação atualizada com sucesso!'
+                : 'Transação adicionada com sucesso!'),
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao salvar transação: $e'),
+            content: Text(
+                'Erro ao ${widget.transaction != null ? 'atualizar' : 'salvar'} transação: $e'),
             action: e.toString().contains('criar uma conta')
                 ? SnackBarAction(
                     label: 'Criar Conta',

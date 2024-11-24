@@ -241,4 +241,101 @@ class DatabaseService {
       await conn.close();
     }
   }
+
+  Future<void> updateCategory(int categoryId, String name) async {
+    final conn = await _getConnection();
+    try {
+      await conn.query(
+        'UPDATE categories SET name = ? WHERE id = ?',
+        [name, categoryId],
+      );
+      _eventService.notifyDatabaseChanged('category_updated');
+    } finally {
+      await conn.close();
+    }
+  }
+
+  Future<void> updateAccount(int accountId, String name, String type) async {
+    final conn = await _getConnection();
+    try {
+      await conn.query(
+        'UPDATE accounts SET name = ?, type = ? WHERE id = ?',
+        [name, type, accountId],
+      );
+      _eventService.notifyDatabaseChanged('account_updated');
+    } finally {
+      await conn.close();
+    }
+  }
+
+  Future<void> updateTransaction(Transaction transaction) async {
+    final conn = await _getConnection();
+    try {
+      String formattedDate = transaction.date.toIso8601String().split('T')[0] +
+          ' ' +
+          transaction.date.toIso8601String().split('T')[1].split('.')[0];
+
+      await conn.query(
+        'UPDATE transactions SET description = ?, amount = ?, date = ?, category_id = ?, type = ?, account_id = ? WHERE id = ?',
+        [
+          transaction.description,
+          transaction.amount,
+          formattedDate,
+          transaction.categoryId,
+          transaction.type,
+          transaction.accountId,
+          transaction.id,
+        ],
+      );
+      _eventService.notifyDatabaseChanged('transaction_updated');
+    } finally {
+      await conn.close();
+    }
+  }
+
+  Future<void> deleteTransaction(int transactionId) async {
+    final conn = await _getConnection();
+    try {
+      // Primeiro, obtém os detalhes da transação
+      var result = await conn.query(
+          'SELECT amount, type, account_id FROM transactions WHERE id = ?',
+          [transactionId]);
+
+      if (result.isNotEmpty) {
+        var transaction = result.first;
+        var amount = transaction['amount'] as double;
+        var type = transaction['type'] as String;
+        var accountId = transaction['account_id'] as int;
+
+        // Inicia uma transação no banco
+        await conn.query('START TRANSACTION');
+
+        // Deleta a transação
+        await conn
+            .query('DELETE FROM transactions WHERE id = ?', [transactionId]);
+
+        // Atualiza o saldo da conta
+        if (type == 'expense') {
+          // Se era uma despesa, adiciona o valor de volta
+          await conn.query(
+              'UPDATE accounts SET balance = balance + ? WHERE id = ?',
+              [amount, accountId]);
+        } else if (type == 'income') {
+          // Se era uma receita, subtrai o valor
+          await conn.query(
+              'UPDATE accounts SET balance = balance - ? WHERE id = ?',
+              [amount, accountId]);
+        }
+
+        // Confirma a transação
+        await conn.query('COMMIT');
+        _eventService.notifyDatabaseChanged('transaction_deleted');
+      }
+    } catch (e) {
+      await conn.query('ROLLBACK');
+      throw e;
+    } finally {
+      await conn.close();
+    }
+  }
 }

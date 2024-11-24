@@ -1,4 +1,4 @@
-import 'dart:async'; // Adicione esta linha no início do arquivo
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction.dart';
@@ -7,11 +7,13 @@ import '../services/database_service.dart';
 import '../widgets/expense_chart.dart';
 import '../widgets/category_spending_chart.dart';
 import '../widgets/account_balance_card.dart';
+import '../screens/add_transaction_screen.dart';
 import '../services/auth_service.dart';
 import 'package:intl/intl.dart';
 import 'accounts_screen.dart';
 import 'categories_screen.dart';
 import '../services/event_service.dart';
+import '../screens/edit_transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -481,6 +483,148 @@ class _HomeContentState extends State<HomeContent> {
         .fold(0, (sum, t) => sum + t.amount);
   }
 
+  Widget _buildTransactionsList() {
+    if (_transactions.isEmpty) {
+      return Center(
+        child: Text('Nenhuma transação registrada'),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: _transactions.length,
+      separatorBuilder: (context, index) => SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final transaction = _transactions[index];
+        return Card(
+          elevation: 2,
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transaction.description,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'R\$ ${transaction.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: transaction.type == 'expense'
+                            ? Colors.red[300]
+                            : Colors.green[300],
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          color: Colors.white70,
+                          onPressed: () => _editTransaction(transaction),
+                        ),
+                        SizedBox(width: 12),
+                        IconButton(
+                          icon: Icon(Icons.delete, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          color: Colors.red[300],
+                          onPressed: () => _deleteTransaction(transaction.id),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteTransaction(int transactionId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirmar exclusão'),
+        content: Text('Deseja realmente excluir esta transação?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _db.deleteTransaction(transactionId);
+        await _loadData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Transação excluída com sucesso!')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao excluir transação: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _editTransaction(Transaction transaction) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTransactionScreen(transaction: transaction),
+      ),
+    );
+
+    if (result == true) {
+      await _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_error != null) {
@@ -691,6 +835,17 @@ class _HomeContentState extends State<HomeContent> {
                 );
               },
             ),
+            SizedBox(height: 24),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Últimas Transações',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            SizedBox(height: 16),
+            _buildTransactionsList(),
+            SizedBox(height: 16),
           ],
         ),
       ),

@@ -1,4 +1,4 @@
-#Sun Nov 24 12:36:59 BRT 2024
+#Sun Nov 24 13:03:14 BRT 2024
 base.0=/home/estevaob/trabalhofinal/build/app/intermediates/dex/debug/mergeDexDebug/classes.dex
 renamed.0=classes.dex
 path.0=classes.dex

@@ -264,6 +264,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               ),
                               SizedBox(width: 16),
                               IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () => _editAccount(account),
+                                color: Colors.white,
+                              ),
+                              IconButton(
                                 icon: Icon(Icons.delete),
                                 onPressed: () => _deleteAccount(account.id),
                                 color: Colors.red,
@@ -294,6 +299,102 @@ class _AccountsScreenState extends State<AccountsScreen> {
         return 'Cartão de Crédito';
       default:
         return type;
+    }
+  }
+
+  Future<void> _editAccount(Account account) async {
+    final _formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController(text: account.name);
+    String accountType = account.type;
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Editar Conta'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nome da Conta',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira um nome';
+                      }
+                      return null;
+                    },
+                    autofocus: true,
+                  ),
+                  SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: accountType,
+                    decoration: InputDecoration(
+                      labelText: 'Tipo de Conta',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                          value: 'checking', child: Text('Conta Corrente')),
+                      DropdownMenuItem(
+                          value: 'savings', child: Text('Poupança')),
+                      DropdownMenuItem(
+                          value: 'investment', child: Text('Investimento')),
+                      DropdownMenuItem(
+                          value: 'credit', child: Text('Cartão de Crédito')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        accountType = value;
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  await _db.updateAccount(
+                    account.id,
+                    nameController.text,
+                    accountType,
+                  );
+                  Navigator.pop(context, true);
+                }
+              },
+              child: Text('Salvar'),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        await _loadAccounts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Conta atualizada com sucesso!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar conta: $e')),
+        );
+      }
     }
   }
 }

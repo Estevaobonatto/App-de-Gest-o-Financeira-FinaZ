@@ -141,9 +141,18 @@ class _CategoriesScreenState extends State<CategoriesScreen>
               category['type'] == 'expense' ? 'Despesa' : 'Receita',
               style: TextStyle(color: Colors.white70),
             ),
-            trailing: IconButton(
-              icon: Icon(Icons.delete, color: Colors.white),
-              onPressed: () => _deleteCategory(category['id']),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit, color: Colors.white),
+                  onPressed: () => _editCategory(category),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.white),
+                  onPressed: () => _deleteCategory(category['id']),
+                ),
+              ],
             ),
           ),
         );
@@ -249,6 +258,60 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             SnackBar(content: Text('Erro ao deletar categoria: $e')),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _editCategory(Map<String, dynamic> category) async {
+    final nameController = TextEditingController(text: category['name']);
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Editar Categoria'),
+          content: TextField(
+            controller: nameController,
+            decoration: InputDecoration(
+              labelText: 'Nome da Categoria',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isNotEmpty) {
+                  await _db.updateCategory(
+                    category['id'],
+                    nameController.text,
+                  );
+                  Navigator.pop(context, true);
+                }
+              },
+              child: Text('Salvar'),
+            ),
+          ],
+        ),
+      );
+
+      if (result == true) {
+        await _loadCategories();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Categoria atualizada com sucesso!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar categoria: $e')),
+        );
       }
     }
   }

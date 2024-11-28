@@ -26,6 +26,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Início'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _handleLogout,
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -210,6 +219,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final authService = AuthService();
+    await authService.logout();
+    Navigator.pushReplacementNamed(context, '/login');
   }
 }
 
